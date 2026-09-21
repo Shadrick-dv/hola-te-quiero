@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Para Liz 🌻</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000000;
+            font-family: 'Montserrat', sans-serif;
+            color: #fff;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none;
+        }
+
+        #webgl-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        #webgl-container canvas {
+            display: block;
+            touch-action: none;
+        }
+
+        /* Intro Screen */
+        #intro-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #intro-screen h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 4.5rem;
+            color: #ffea00;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 30px rgba(255, 234, 0, 0.6);
+            text-align: center;
+        }
+
+        #start-btn {
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            color: #111;
+            background: linear-gradient(45deg, #ffea00, #ffb300);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(255, 234, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-top: 30px;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 234, 0, 0.8);
+        }
+
+        /* Botón de música (esquina superior derecha) */
+        #music-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 234, 0, 0.8);
+            color: #ffea00;
+            font-size: 1.4rem;
+            cursor: pointer;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(255, 234, 0, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            padding: 0;
+            line-height: 1;
+            touch-action: manipulation;
+        }
+
+        #music-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 234, 0, 0.8);
+        }
+
+        #music-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* CSS2D RENDERER */
+        #css2d-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .floating-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: transform 0.2s ease;
+            opacity: 1;
+            will-change: transform, opacity;
+            transform-origin: center center;
+            touch-action: manipulation;
+        }
+
+        .floating-item:hover img {
+            border-color: #ffffff;
+            box-shadow: 0 0 25px rgba(255, 234, 0, 1);
+        }
+
+        .floating-item img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 234, 0, 0.9);
+            box-shadow: 0 0 15px rgba(255, 234, 0, 0.7);
+            margin-bottom: 5px;
+            pointer-events: none;
+            background-color: #111;
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+
+        .floating-item .label {
+            font-family: 'Dancing Script', cursive;
+            font-size: 1.2rem;
+            color: #fff;
+            text-shadow: 0px 1px 3px rgba(0,0,0,1), 0px 0px 8px #ffea00;
+            white-space: nowrap;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 2px 10px;
+            border-radius: 10px;
+        }
+
+        .center-text {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.8rem;
+            color: #ffea00;
+            text-shadow: 0 0 15px #ffea00, 0 0 30px #ffaa00, 2px 2px 5px rgba(0,0,0,0.8);
+            cursor: pointer;
+            pointer-events: auto;
+            white-space: nowrap;
+            transition: transform 0.3s ease, text-shadow 0.3s ease;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 5px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(2px);
+            touch-action: manipulation;
+        }
+
+        .center-text:hover {
+            transform: scale(1.1);
+            text-shadow: 0 0 25px #ffffff, 0 0 50px #ffea00, 2px 2px 5px rgba(0,0,0,0.8);
+        }
+
+        #modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #modal-content {
+            background: rgba(20, 20, 20, 0.7);
+            border: 1px solid rgba(255, 234, 0, 0.4);
+            border-radius: 20px;
+            padding: 30px 25px;
+            width: 85%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9), inset 0 0 20px rgba(255, 234, 0, 0.1);
+            transform: translateY(20px) scale(0.95);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #modal-overlay.active #modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        #modal-title {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2.5rem;
+            color: #ffea00;
+            margin: 0 0 15px 0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+
+        #modal-text {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #f0f0f0;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+
+        #close-btn {
+            background: transparent;
+            border: 1px solid #ffea00;
+            color: #ffea00;
+            padding: 8px 30px;
+            border-radius: 25px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #close-btn:hover {
+            background: #ffea00;
+            color: #000;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 5;
+            text-align: center;
+            width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        /* Responsive para móvil */
+        @media (max-width: 600px) {
+            #intro-screen h1 { font-size: 3rem; }
+            #start-btn { padding: 12px 35px; font-size: 1rem; }
+            .center-text { font-size: 2.4rem; padding: 4px 14px; }
+            .floating-item img { width: 45px; height: 45px; }
+            .floating-item .label { font-size: 0.9rem; }
+            #instructions { font-size: 0.7rem; }
+            #music-btn { width: 44px; height: 44px; font-size: 1.2rem; top: 15px; right: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="intro-screen">
+        <h1>Para Liz 🌻</h1>
+        <button id="start-btn">Entrar a la Galaxia</button>
+    </div>
+
+    <div id="webgl-container"></div>
+    <div id="css2d-container"></div>
+
+    <!-- Botón de música -->
+    <button id="music-btn" title="Música">🔊</button>
+
+    <!-- Elemento de audio: usa ruta relativa para GitHub Pages -->
+    <audio id="bg-music" loop preload="auto"></audio>
+
+    <div id="instructions">El universo gira solo • Arrastra para explorar • Pellizca o rueda para zoom • Toca las imágenes</div>
+
+    <div id="modal-overlay">
+        <div id="modal-content">
+            <h2 id="modal-title">Título</h2>
+            <p id="modal-text">Mensaje</p>
+            <button id="close-btn">Cerrar</button>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.150.1/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.150.1/examples/jsm/"
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // ============================================
+        // 🎵 CONFIGURACIÓN DE LA MÚSICA (GitHub Pages)
+        // ============================================
+        // El archivo de audio debe estar en la MISMA carpeta que este HTML.
+        // Nombre del archivo: "niña bonita.mpeg"
+        //
+        // ⚠️ IMPORTANTE: si al subirlo a GitHub te da error 404, renombra el archivo
+        // a "nina-bonita.mpeg" (sin ñ ni espacios) y cambia la línea de abajo a:
+        // const MUSIC_FILENAME = "nina-bonita.mpeg";
+        //
+        // ⚠️ Si tu archivo realmente es un MP3 (aunque se llame .mpeg), algunos navegadores
+        // podrían no reproducirlo. Lo ideal es convertirlo a .mp3 real y usar:
+        const MUSIC_FILENAME = "nina_bonita.mp3";
+        //const MUSIC_FILENAME = "nina_bonita.mpeg";
+
+        // encodeURI maneja el espacio y la ñ correctamente en la URL
+        const MUSIC_URL = encodeURI("./" + MUSIC_FILENAME);
+
+        const audio = document.getElementById('bg-music');
+        audio.src = MUSIC_URL;
+        audio.volume = 0.5;
+
+        const musicBtn = document.getElementById('music-btn');
+        let musicPlaying = false;
+
+        function updateMusicBtn() {
+            musicBtn.textContent = musicPlaying ? '🔊' : '🔇';
+        }
+
+        function playMusic() {
+            audio.play().then(() => {
+                musicPlaying = true;
+                updateMusicBtn();
+            }).catch(err => {
+                console.warn("No se pudo reproducir la música:", err);
+                musicPlaying = false;
+                updateMusicBtn();
+            });
+        }
+
+        function toggleMusic() {
+            if (musicPlaying) {
+                audio.pause();
+                musicPlaying = false;
+                updateMusicBtn();
+            } else {
+                playMusic();
+            }
+        }
+
+        musicBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMusic();
+        });
+
+        // Fallback: si la música no arrancó por política del navegador,
+        // se intenta al primer toque/clic en cualquier parte
+        function attemptAutoplay() {
+            if (!musicPlaying) {
+                playMusic();
+            }
+            document.removeEventListener('click', attemptAutoplay);
+            document.removeEventListener('touchstart', attemptAutoplay);
+        }
+        document.addEventListener('click', attemptAutoplay);
+        document.addEventListener('touchstart', attemptAutoplay, { passive: true });
+
+        updateMusicBtn();
+
+        // ============================================
+        // BASE DE DATOS DE FRASES CON EMOJIS
+        // ============================================
+        const floatingData = [
+            { short: "Mi reina", emoji: "👑", text: "Eres la casualidad más bonita que me ha pasado." },
+            { short: "Mi universo", emoji: "🌌", text: "Si el universo es infinito, mi amor por ti lo es aún más." },
+            { short: "Luz de mis ojos", emoji: "👀", text: "Cada vez que te veo, mi mundo se ilumina por completo." },
+            { short: "Mi felicidad", emoji: "😊", text: "No hay un solo día en que no me hagas sonreír. Eres mi paz." },
+            { short: "Mi todo", emoji: "💖", text: "Eres el principio y el final de todas mis cosas favoritas." },
+            { short: "Preciosa", emoji: "🌹", text: "Ni la galaxia entera se compara con lo hermosa que eres." },
+            { short: "Amor de mi vida", emoji: "💕", text: "Llegaste para quedarte y hacer de mi vida un lugar mejor." },
+            { short: "Siempre juntos", emoji: "🤝", text: "No importa la distancia, nuestros corazones están conectados." },
+            { short: "Te adoro", emoji: "😍", text: "Adoro cada pequeño detalle de ti, hasta tus defectos me parecen perfectos." },
+            { short: "Eres mi sol", emoji: "☀️", text: "Tú le das calor y color a mis días más oscuros." },
+            { short: "Me encantas", emoji: "✨", text: "Me encanta tu risa, tu voz y la forma en que me haces sentir." },
+            { short: "Solo tú", emoji: "🎯", text: "En un mundo de billones, mis ojos y mi corazón solo te buscan a ti." },
+            { short: "Para siempre", emoji: "♾️", text: "Quiero coleccionar momentos a tu lado por el resto de mi vida." },
+            { short: "Mi princesa", emoji: "👸", text: "Tratarte como mereces es lo mínimo que puedo hacer por ti." },
+            { short: "Mi paz", emoji: "🕊️", text: "Cuando estoy contigo, siento que todo lo malo desaparece." },
+            { short: "Mi tesoro", emoji: "💎", text: "Eres lo más valioso que tengo y prometo cuidarte siempre." },
+            { short: "Mi dulce amor", emoji: "🍯", text: "La dulzura de tu corazón es lo que me enamoró perdidamente." },
+            { short: "Mi estrella", emoji: "⭐", text: "Brillas tanto que guías mi camino cuando me siento perdido." },
+            { short: "Mi vida", emoji: "🌱", text: "Ya no me imagino un mañana sin ti en mis planes." },
+            { short: "Luz", emoji: "💡", text: "Eres esa chispa que le faltaba a mi alma." },
+            { short: "Mi ángel", emoji: "😇", text: "Cuidas de mí sin darte cuenta, eres mi ángel guardián." },
+            { short: "Mi ilusión", emoji: "🌈", text: "Cada mañana me despierto con ganas de verte, eres mi ilusión." },
+            { short: "Mi debilidad", emoji: "🥺", text: "Contigo soy débil, pero a la vez me haces más fuerte que nunca." },
+            { short: "Mi fortuna", emoji: "🍀", text: "Tenerte a mi lado es la mayor fortuna que he tenido jamás." },
+            { short: "Mi razón", emoji: "💭", text: "Eres la razón por la que creo en el amor verdadero." },
+            { short: "Mi destino", emoji: "🌟", text: "Estábamos destinados a encontrarnos, no hay duda." },
+            { short: "Mi refugio", emoji: "🏠", text: "En tus brazos encuentro mi refugio seguro, mi hogar." },
+            { short: "Mi sueño", emoji: "💫", text: "Cada noche sueño con tu sonrisa, eres mi sueño hecho realidad." },
+            { short: "Mi cielo", emoji: "🌠", text: "Eres mi cielo estrellado, mi lugar favorito en el universo." },
+            { short: "Mi corazón", emoji: "❤️", text: "Mi corazón late por ti, cada segundo de cada día." }
+        ];
+
+        // ============================================
+        // IMÁGENES
+        // ============================================
+        const customImageUrl = "https://scontent-lim1-1.xx.fbcdn.net/v/t1.6435-9/119124568_234188908122226_7288212883848244547_n.jpg?stp=dst-jpg_tt6&cstp=mx899x1124&ctp=s899x1124&_nc_cat=103&ccb=1-7&_nc_sid=3a1ebe&_nc_ohc=DGRoJycylFsQ7kNvwEwtP1T&_nc_oc=AdosXmdfyZMX-R5hRUF-A6Rijh_Z5WyRyJU0hCXFFIEC0_b7wiLLOlm1lCpFYPshzo0&_nc_zt=23&_nc_ht=scontent-lim1-1.xx&_nc_gid=gzG8fX72X8bfzM8QJ28qhQ&_nc_ss=7b289&oh=00_AQIJRWScqrJLX134uTiNjUe3yzOxjV9CST4O-R6drnUS1g&oe=6AD896E5";
+
+        const baseImages = [
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSoEVCf2b30t-6lut5RUr4JDzQOQ09ZjVtvBMIqjJGBJg&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSWfcMj2bXjP9uAnoV1TueKo8ohe3qiKJj1fWfuaJDRJQ&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQxb7pJFbKqT7UhjwerK-IFFZ24WqaHvYp3L447OOpc_A&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQmwnLpT_tUh9R_5GtZkbN_NA0ljBBnV77rML-AJN4R0g&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT_E4Tq1tpKmGcF4I3xjhHjgTxnQtleeCGL8fV3Uvn-zA&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR7I2jV9CBqjpbiEymAujUkYOfVXrHdqqFoKUgl6kbemw&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-wLwgRCAmREMt7VP5PrU2AafrzDrIaha9ca-AjIUJuQ&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQtEVkNXNxRmzKgkLPF-1W1_3GWuNTJuI2MLjuU7iYGA&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQPmUI6wASroJ7wQGea2NP0yo0bBosBCjpvoLg1_RjhIQ&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS3tAshLFA8675PuPVsg7-0plZzcpBz-dL46WRqn2GKBg&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5K_F26sSgsxNHWT9Vl-SKWlrW3n6rLwuoF6Yth8GdkQ&s=10",
+            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQZSSDNzdoYYnNhDui39GSgmU733iD-jGBLdGCRtfHlcg&s=10"
+        ];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        let flowerImages = [];
+        while (flowerImages.length < 30) {
+            const shuffledBatch = shuffleArray([...baseImages]);
+            flowerImages = flowerImages.concat(shuffledBatch);
+        }
+        flowerImages = flowerImages.slice(0, 30);
+
+        for (let i = 1; i < flowerImages.length; i++) {
+            if (flowerImages[i] === flowerImages[i-1]) {
+                for (let j = 0; j < flowerImages.length; j++) {
+                    if (flowerImages[j] !== flowerImages[i] && flowerImages[j] !== flowerImages[i-1]) {
+                        [flowerImages[i], flowerImages[j]] = [flowerImages[j], flowerImages[i]];
+                        break;
+                    }
+                }
+            }
+        }
+
+        const randomIndex = Math.floor(Math.random() * 30);
+        flowerImages[randomIndex] = customImageUrl;
+
+        // ============================================
+        // TEXTURAS
+        // ============================================
+        function createHeartTexture() {
+            const size = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, size, size);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            
+            const x = size / 2;
+            const y = size / 2 + 5;
+            const width = size * 0.7;
+            const height = size * 0.7;
+            
+            ctx.moveTo(x, y - height * 0.3);
+            ctx.bezierCurveTo(x, y - height * 0.6, x - width * 0.5, y - height * 0.6, x - width * 0.5, y - height * 0.2);
+            ctx.bezierCurveTo(x - width * 0.5, y + height * 0.2, x, y + height * 0.4, x, y + height * 0.5);
+            ctx.bezierCurveTo(x, y + height * 0.4, x + width * 0.5, y + height * 0.2, x + width * 0.5, y - height * 0.2);
+            ctx.bezierCurveTo(x + width * 0.5, y - height * 0.6, x, y - height * 0.6, x, y - height * 0.3);
+            
+            ctx.fill();
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function createCircleTexture() {
+            const size = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+            gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.9)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        function createGlowTexture() {
+            const size = 128;
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            const gradient = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
+            gradient.addColorStop(0, 'rgba(255, 255, 200, 1)');
+            gradient.addColorStop(0.2, 'rgba(255, 234, 0, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 150, 0, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        const heartTexture = createHeartTexture();
+        const circleTexture = createCircleTexture();
+        const glowTexture = createGlowTexture();
+
+        const container = document.getElementById('webgl-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.003);
+
+        const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 300);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // ============================================
+        // CSS2D RENDERER
+        // ============================================
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.getElementById('css2d-container').appendChild(labelRenderer.domElement);
+
+        // ============================================
+        // CONTROLES
+        // ============================================
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.minDistance = 25;
+        controls.maxDistance = 400;
+        controls.enablePan = false;
+        controls.enableZoom = true;
+        controls.zoomSpeed = 1.5;
+        controls.enableRotate = true;
+        controls.rotateSpeed = 1.0;
+        controls.autoRotate = false;
+        controls.touches = {
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN
+        };
+        controls.domElement.style.touchAction = 'none';
+
+        // ============================================
+        // GALAXIA DE FONDO
+        // ============================================
+        function createGalaxy() {
+            const particleCount = 15000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const radius = 20 + Math.random() * 150;
+                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos((Math.random() * 2) - 1);
+
+                positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i3 + 2] = radius * Math.cos(phi);
+
+                const mix = Math.random();
+                if (mix > 0.6) {
+                    colors[i3] = 1.0; colors[i3+1] = 0.9; colors[i3+2] = 0.5;
+                } else if (mix > 0.3) {
+                    colors[i3] = 1.0; colors[i3+1] = 1.0; colors[i3+2] = 1.0;
+                } else {
+                    colors[i3] = 1.0; colors[i3+1] = 0.8; colors[i3+2] = 0.0;
+                }
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 2.0,
+                map: circleTexture,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.7,
+                depthWrite: false,
+                alphaTest: 0.01
+            });
+
+            return new THREE.Points(geometry, material);
+        }
+
+        const galaxy = createGalaxy();
+        scene.add(galaxy);
+
+        // ============================================
+        // CORAZÓN DE PARTÍCULAS
+        // ============================================
+        function createParticleHeart() {
+            const particleCount = 4000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const t = Math.random() * Math.PI * 2;
+                
+                const scale = 1.2;
+                const x = scale * (16 * Math.pow(Math.sin(t), 3));
+                const y = scale * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+                
+                const noiseX = (Math.random() - 0.5) * 1.5;
+                const noiseY = (Math.random() - 0.5) * 1.5;
+                const noiseZ = (Math.random() - 0.5) * 3; 
+
+                positions[i3] = x + noiseX;     
+                positions[i3 + 1] = y + noiseY;
+                positions[i3 + 2] = noiseZ;
+
+                colors[i3] = 1.0;      
+                colors[i3 + 1] = 0.85 + Math.random() * 0.15; 
+                colors[i3 + 2] = 0.1;  
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 1.8,
+                map: heartTexture,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 1.0,
+                depthWrite: false,
+                alphaTest: 0.01
+            });
+
+            return new THREE.Points(geometry, material);
+        }
+
+        const heart = createParticleHeart();
+        scene.add(heart);
+
+        // ============================================
+        // BASE GALÁCTICA AMARILLA
+        // ============================================
+        function createGalaxyBase() {
+            const particleCount = 8000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const colors = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount; i++) {
+                const i3 = i * 3;
+                const radius = Math.pow(Math.random(), 0.6) * 45;
+                const angle = Math.random() * Math.PI * 2 + radius * 0.15;
+                const height = (Math.random() - 0.5) * 4;
+                
+                positions[i3] = Math.cos(angle) * radius;
+                positions[i3 + 1] = height - 25;
+                positions[i3 + 2] = Math.sin(angle) * radius;
+
+                const brightness = 0.6 + Math.random() * 0.4;
+                colors[i3] = 1.0 * brightness;
+                colors[i3 + 1] = (0.7 + Math.random() * 0.3) * brightness;
+                colors[i3 + 2] = 0.05 * brightness;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const material = new THREE.PointsMaterial({
+                size: 1.5,
+                map: circleTexture,
+                vertexColors: true,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.9,
+                depthWrite: false,
+                alphaTest: 0.01
+            });
+
+            return new THREE.Points(geometry, material);
+        }
+
+        const galaxyBase = createGalaxyBase();
+        scene.add(galaxyBase);
+
+        const glowSprite = new THREE.Sprite(
+            new THREE.SpriteMaterial({
+                map: glowTexture,
+                color: 0xffea00,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.8,
+                depthWrite: false
+            })
+        );
+        glowSprite.scale.set(80, 80, 1);
+        glowSprite.position.set(0, -15, 0);
+        scene.add(glowSprite);
+
+        const coreGlow = new THREE.Sprite(
+            new THREE.SpriteMaterial({
+                map: glowTexture,
+                color: 0xffffff,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.9,
+                depthWrite: false
+            })
+        );
+        coreGlow.scale.set(25, 25, 1);
+        coreGlow.position.set(0, -20, 0);
+        scene.add(coreGlow);
+
+        // ============================================
+        // TEXTO CENTRAL
+        // ============================================
+        const centerDiv = document.createElement('div');
+        centerDiv.className = 'center-text';
+        centerDiv.textContent = 'Te amo Liz❤️';
+        
+        const centralMessage = "Hola, niña ❤️ Espero de corazón que te haya gustado este pequeño detalle. Quería recordarte que eres una persona muy importante para mí y que espero que nunca lo olvides. 🥹❤️ También quiero pedirte perdón si alguna vez te hice sentir mal. De verdad nunca ha sido mi intención, y espero que puedas perdonarme. 🥺 Sé que quizá estamos a miles de kilómetros de distancia, pero eso no significa que lo que siento por ti sea menos real. Al contrario, a pesar de la distancia, sigues siendo alguien muy especial para mí y ocupas un lugar enorme en mi corazón. ❤️Y si llegaste hasta aquí leyendo todo esto, necesito que me confirmes con un “Amo a Cherry” 😂. Esa será tu contraseña para desbloquear el premio: unos ricos besotes para mí. 😘💋 Te amo, amorcito. ❤️ Jajaja, ya sabes que me encantas niña culona. 🥹😂";
+        
+        centerDiv.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            openModal('Para mi niña ❤️🌻', centralMessage); 
+        });
+
+        const centerLabel = new CSS2DObject(centerDiv);
+        centerLabel.position.set(0, 0, 0); 
+        scene.add(centerLabel);
+
+        // ============================================
+        // GRUPO ROTATORIO PARA LAS IMÁGENES FLOTANTES
+        // ============================================
+        const orbitGroup = new THREE.Group();
+        scene.add(orbitGroup);
+
+        const floatingObjects = [];
+
+        floatingData.forEach((data, index) => {
+            const imgUrl = flowerImages[index % flowerImages.length];
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'floating-item';
+            
+            itemDiv.innerHTML = `
+                <img src="${imgUrl}" alt="Ramo de flores" draggable="false">
+                <span class="label">${data.short} ${data.emoji}</span>
+            `;
+
+            const modalTitleText = `${data.short} ${data.emoji}`;
+
+            itemDiv.addEventListener('click', (e) => { 
+                e.stopPropagation();
+                openModal(modalTitleText, data.text); 
+            });
+
+            const itemObject = new CSS2DObject(itemDiv);
+            
+            const radius = 45 + Math.random() * 90;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos((Math.random() * 2) - 1);
+            
+            itemObject.position.set(
+                radius * Math.sin(phi) * Math.cos(theta),
+                radius * Math.cos(phi) * 0.7,
+                radius * Math.sin(phi) * Math.sin(theta)
+            );
+            
+            itemObject.userData = {
+                originalY: itemObject.position.y,
+                floatSpeed: 0.5 + Math.random() * 0.8,
+                floatOffset: Math.random() * Math.PI * 2,
+                baseScale: 0.8 + Math.random() * 0.5
+            };
+            
+            orbitGroup.add(itemObject);
+            floatingObjects.push(itemObject);
+        });
+
+        // ============================================
+        // LÓGICA DEL MODAL
+        // ============================================
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+
+        function openModal(title, text) {
+            modalTitle.textContent = title;
+            modalText.textContent = text;
+            modalOverlay.classList.add('active');
+        }
+
+        document.getElementById('close-btn').addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('active');
+            }
+        });
+
+        // ============================================
+        // ANIMACIÓN
+        // ============================================
+        const clock = new THREE.Clock();
+        const cameraPosition = new THREE.Vector3();
+        const objectPosition = new THREE.Vector3();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            controls.update();
+
+            const pulse = 1 + Math.sin(elapsedTime * 4) * 0.03;
+            heart.scale.set(pulse, pulse, pulse);
+            
+            const floatY = Math.sin(elapsedTime * 1.5) * 1.2;
+            heart.position.y = floatY;
+            centerLabel.position.y = floatY;
+
+            galaxy.rotation.y = elapsedTime * 0.05;
+            galaxy.rotation.x = Math.sin(elapsedTime * 0.1) * 0.1;
+            
+            galaxyBase.rotation.y = elapsedTime * 0.15;
+            glowSprite.material.opacity = 0.7 + Math.sin(elapsedTime * 2) * 0.15;
+            coreGlow.material.opacity = 0.8 + Math.sin(elapsedTime * 3) * 0.15;
+
+            orbitGroup.rotation.y = elapsedTime * 0.15;
+
+            camera.getWorldPosition(cameraPosition);
+
+            floatingObjects.forEach(obj => {
+                obj.getWorldPosition(objectPosition);
+                
+                const distance = cameraPosition.distanceTo(objectPosition);
+                
+                const minDistance = 30;
+                const maxDistance = 180;
+                
+                let depthFactor = (distance - minDistance) / (maxDistance - minDistance);
+                depthFactor = Math.max(0, Math.min(1, depthFactor));
+                
+                const scale = obj.userData.baseScale * (1.4 - depthFactor * 1.0);
+                const opacity = 1 - (depthFactor * 0.9);
+                
+                obj.element.style.transform = `scale(${scale})`;
+                obj.element.style.opacity = opacity;
+                
+                if (depthFactor > 0.4) {
+                    obj.element.style.filter = `blur(${(depthFactor - 0.4) * 8}px)`;
+                } else {
+                    obj.element.style.filter = 'none';
+                }
+                
+                obj.position.y = obj.userData.originalY + Math.sin(elapsedTime * obj.userData.floatSpeed + obj.userData.floatOffset) * 3;
+            });
+
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        animate();
+
+        // ============================================
+        // RESIZE
+        // ============================================
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ============================================
+        // BOTÓN DE INICIO (también inicia la música)
+        // ============================================
+        document.getElementById('start-btn').addEventListener('click', () => {
+            const intro = document.getElementById('intro-screen');
+            intro.style.opacity = '0';
+            
+            playMusic();
+            
+            setTimeout(() => {
+                intro.style.display = 'none';
+            }, 1000);
+
+            gsap.to(camera.position, {
+                x: 0,
+                y: 5,
+                z: 60,
+                duration: 4.5,
+                ease: "power2.inOut"
+            });
+            
+            gsap.to(controls.target, {
+                x: 0,
+                y: 0,
+                z: 0,
+                duration: 4.5,
+                ease: "power2.inOut"
+            });
+        });
+
+    </script>
+</body>
+</html>
